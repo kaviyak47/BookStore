@@ -26,21 +26,26 @@ This project demonstrates a real-world cloud architecture using **API Gateway, L
 
 ## 🏗️ Architecture Overview
 
-
-
-User (Browser)
-      │
-      ▼
-CloudFront (CDN)
-      │
-      ▼
-S3 (Static Website)
-      │
-      ▼
-API Gateway
-  ├── Product API ── Lambda ── DynamoDB (Products)
-  ├── Cart API    ── Lambda ── DynamoDB (Cart)
-  └── Order API   ── Lambda ── DynamoDB (Orders)
+                User (Browser)
+                        │
+                        ▼
+              CloudFront (CDN)
+                        │
+                        ▼
+            S3 (Static Website)
+                        │
+                        ▼
+                 API Gateway
+          ┌───────────┬───────────┬───────────┐
+          ▼           ▼           ▼
+     Product API   Cart API    Order API
+          │           │           │
+          ▼           ▼           ▼
+        Lambda      Lambda      Lambda
+          │           │           │
+          ▼           ▼           ▼
+     DynamoDB      DynamoDB      DynamoDB
+    (Products)      (Cart)       (Orders)
 
 
 ---
