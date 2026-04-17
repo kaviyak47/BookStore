@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Cart</title>
+
+<style>
+body{
+    margin:0;
+    font-family:"Times New Roman", Times, serif;
+    background:#f4edff;
+}
+.navbar{
+    background:#d8b4fe;
+    padding:18px 40px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+.logo{
+    font-size:30px;
+    font-weight:bold;
+}
+.nav-links a{
+    text-decoration:none;
+    color:black;
+    margin-left:25px;
+    font-size:20px;
+    font-weight:bold;
+}
+.container{
+    padding:40px;
+}
+.item{
+    background:white;
+    padding:20px;
+    margin:15px 0;
+    border-radius:14px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+.left{
+    display:flex;
+    align-items:center;
+    gap:15px;
+}
+.btn{
+    padding:6px 12px;
+    border:none;
+    background:#d8b4fe;
+    cursor:pointer;
+    border-radius:6px;
+    font-size:16px;
+}
+.remove-btn{
+    background:red;
+    color:white;
+    border:none;
+    padding:6px 10px;
+    border-radius:6px;
+    cursor:pointer;
+    font-size:16px;
+}
+.total-box{
+    margin-top:20px;
+    font-size:22px;
+    font-weight:bold;
+}
+</style>
+</head>
+
+<body>
+
+<div class="navbar">
+    <div class="logo">📚 Kaviya's BookStore</div>
+    <div class="nav-links">
+        <a href="products.html">Books</a>
+        <a href="cart.html">Cart</a>
+        <a href="orders.html">Orders</a>
+    </div>
+</div>
+
+<div class="container">
+    <h2>🛒 Your Cart</h2>
+    <div id="cart"></div>
+    <div class="total-box" id="total">Total: ₹0</div>
+    <br>
+    <button class="btn" onclick="placeOrder()">Place Selected Order</button>
+</div>
+
+<script>
+const CART_API = "https://jxjo2t0ulj.execute-api.ap-southeast-1.amazonaws.com/S1/cart";
+const ORDER_API = "https://sxaii3xfgf.execute-api.ap-southeast-1.amazonaws.com/S1/orders";
+
+let cartData = [];
+
+// LOAD CART
+async function loadCart() {
+    try {
+        const res = await fetch(`${CART_API}?user_id=1`);
+        const data = await res.json();
+
+        if (!res.ok) {
+            alert(data.error || data.message || "Failed to load cart");
+            return;
+        }
+
+        cartData = Array.isArray(data) ? data : [];
+        renderCart();
+    } catch (err) {
+        console.error("Load cart error:", err);
+        document.getElementById("cart").innerHTML = "<p>API error while loading cart</p>";
+        document.getElementById("total").innerText = "Total: ₹0";
+    }
+}
+
+// RENDER CART
+function renderCart() {
+    let html = "";
+
+    if (cartData.length === 0) {
+        document.getElementById("cart").innerHTML = "<p>Cart is empty</p>";
+        document.getElementById("total").innerText = "Total: ₹0";
+        return;
+    }
+
+    cartData.forEach((item, index) => {
+        html += `
+        <div class="item">
+            <div class="left">
+                <input type="checkbox"
+                       class="cart-check"
+                       data-user="${item.user_id}"
+                       data-product="${item.product_id}"
+                       data-index="${index}"
+                       onchange="updateTotal()">
+                <div>
+                    <b>${item.title}</b><br>
+                    ₹${item.price} × ${item.qty}
+                </div>
+            </div>
+
+            <div>
+                <button class="btn" onclick="changeQty(${item.user_id}, ${item.product_id}, ${item.qty - 1})">-</button>
+                ${item.qty}
+                <button class="btn" onclick="changeQty(${item.user_id}, ${item.product_id}, ${item.qty + 1})">+</button>
+                <button class="remove-btn" onclick="deleteItem(${item.user_id}, ${item.product_id})">X</button>
+            </div>
+        </div>`;
+    });
+
+    document.getElementById("cart").innerHTML = html;
+    updateTotal();
+}
+
+// UPDATE TOTAL
+function updateTotal() {
+    let total = 0;
+    const checks = document.querySelectorAll(".cart-check");
+
+    checks.forEach(cb => {
+        if (cb.checked) {
+            const item = cartData.find(i =>
+                Number(i.user_id) === Number(cb.dataset.user) &&
+                Number(i.product_id) === Number(cb.dataset.product)
+            );
+
+            if (item) {
+                total += Number(item.price) * Number(item.qty);
+            }
+        }
+    });
+
+    document.getElementById("total").innerText = "Total: ₹" + total;
+}
+
+// CHANGE QUANTITY
+async function changeQty(user_id, product_id, qty) {
+    try {
+        const res = await fetch(CART_API, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                user_id: Number(user_id),
+                product_id: Number(product_id),
+                qty: Number(qty)
+            })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            alert(data.error || data.message || "Quantity update failed");
+            return;
+        }
+
+        await loadCart();
+    } catch (err) {
+        console.error("PUT error:", err);
+        alert("API error while updating quantity");
+    }
+}
+
+// DELETE ITEM
+async function deleteItem(user_id, product_id) {
+    try {
+        const res = await fetch(CART_API, {
+            method: "DELETE",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                user_id: Number(user_id),
+                product_id: Number(product_id)
+            })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            alert(data.error || data.message || "Delete failed");
+            return;
+        }
+
+        await loadCart();
+    } catch (err) {
+        console.error("DELETE error:", err);
+        alert("API error while deleting item");
+    }
+}
+
+// PLACE ORDER
+async function placeOrder() {
+    const checks = document.querySelectorAll(".cart-check");
+    let selectedItems = [];
+    let total = 0;
+
+    checks.forEach(cb => {
+        if (cb.checked) {
+            const item = cartData.find(i =>
+                Number(i.user_id) === Number(cb.dataset.user) &&
+                Number(i.product_id) === Number(cb.dataset.product)
+            );
+
+            if (item) {
+                selectedItems.push({
+                    user_id: Number(item.user_id),
+                    product_id: Number(item.product_id),
+                    title: item.title,
+                    price: Number(item.price),
+                    qty: Number(item.qty)
+                });
+                total += Number(item.price) * Number(item.qty);
+            }
+        }
+    });
+
+    if (selectedItems.length === 0) {
+        alert("Please select at least one item");
+        return;
+    }
+
+    try {
+        const orderRes = await fetch(ORDER_API, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                user_id: 1,
+                items: selectedItems,
+                total: total
+            })
+        });
+
+        const orderData = await orderRes.json();
+
+        if (!orderRes.ok) {
+            alert(orderData.error || orderData.message || "Order failed");
+            return;
+        }
+
+        for (const item of selectedItems) {
+            const delRes = await fetch(CART_API, {
+                method: "DELETE",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    user_id: Number(item.user_id),
+                    product_id: Number(item.product_id)
+                })
+            });
+
+            const delData = await delRes.json();
+
+            if (!delRes.ok) {
+                alert(delData.error || delData.message || "Cart item delete failed");
+                return;
+            }
+        }
+
+        alert("✅ Order placed successfully");
+        await loadCart();
+        window.location.href = "orders.html";
+    } catch (err) {
+        console.error("Order error:", err);
+        alert("API error while placing order");
+    }
+}
+
+loadCart();
+</script>
+
+</body>
+</html>

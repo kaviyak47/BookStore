@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Orders</title>
+
+<style>
+body{
+    margin:0;
+    font-family:"Times New Roman", Times, serif;
+    background:#f3e8ff;
+}
+.navbar{
+    background:#d8b4fe;
+    padding:18px 40px;
+    display:flex;
+    justify-content:space-between;
+}
+.logo{
+    font-size:30px;
+    font-weight:bold;
+}
+.nav-links a{
+    text-decoration:none;
+    color:black;
+    margin-left:25px;
+    font-size:20px;
+    font-weight:bold;
+}
+.container{
+    padding:40px;
+}
+.order-card{
+    background:white;
+    padding:20px;
+    margin:20px 0;
+    border-radius:12px;
+}
+</style>
+</head>
+<body>
+
+<div class="navbar">
+    <div class="logo">📚 Kaviya's BookStore</div>
+    <div class="nav-links">
+        <a href="index.html">Home</a>
+        <a href="products.html">Books</a>
+        <a href="cart.html">Cart</a>
+        <a href="orders.html">Orders</a>
+    </div>
+</div>
+
+<div class="container">
+    <h2>📦 Your Orders</h2>
+    <div id="orders"></div>
+</div>
+
+<script>
+const ORDER_API = "https://sxaii3xfgf.execute-api.ap-southeast-1.amazonaws.com/S1/orders";
+
+async function loadOrders() {
+    const res = await fetch(ORDER_API);
+    const orders = await res.json();
+
+    let html = "";
+
+    if (!orders || orders.length === 0) {
+        html = "<p>No orders found</p>";
+    } else {
+        orders.forEach(order => {
+            html += `
+            <div class="order-card">
+                <h3>Order ID: ${order.orderId}</h3>
+                <p><b>Total:</b> ₹${order.total}</p>
+                <p><b>Books:</b></p>
+                <ul>
+                    ${order.items.map(item =>
+                        `<li>${item.title} × ${item.qty} - ₹${item.price}</li>`
+                    ).join("")}
+                </ul>
+            </div>`;
+        });
+    }
+
+    document.getElementById("orders").innerHTML = html;
+}
+
+loadOrders();
+</script>
+
+</body>
+</html>
