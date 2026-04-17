@@ -13,7 +13,7 @@ This project demonstrates a microservices architecture with separate services fo
 ✅ Unit testing using pytest
 
 ## 🏗️ Architecture
-
+'''
 Frontend (HTML/CSS/JS)
         ↓
 CloudFront (CDN)
@@ -25,7 +25,7 @@ API Gateway (REST APIs)
 AWS Lambda (Microservices)
         ↓
 DynamoDB (Database)
-
+'''
 ## 🧰 Tech Stack
 
 Frontend: HTML, CSS, JavaScript
@@ -37,7 +37,7 @@ Hosting: S3 + CloudFront
 Testing: pytest + unittest.mock
 
 ## 📂 Project Structure
-
+'''
 bookstore-frontend-tf/
 │
 ├── frontend/
@@ -60,7 +60,7 @@ bookstore-frontend-tf/
 ├── main.tf
 ├── provider.tf
 ├── outputs.tf
-
+'''
 🧪 Running Tests
 
 Install pytest:
