@@ -1,4 +1,4 @@
-# 📚 Kaviya’s BookStore – Serverless E-Commerce App
+# 📚 Kaviya’s BookStore – E-Commerce App
 
 A fully serverless bookstore web application built using **AWS Cloud services**.  
 This project demonstrates a real-world cloud architecture using **API Gateway, Lambda, DynamoDB, S3, and CloudFront**.
