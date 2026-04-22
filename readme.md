@@ -26,7 +26,7 @@ This project demonstrates a real-world cloud architecture using API Gateway, Lam
 
 ## 🏗️ Architecture Overview
 
-```text
+
 +----------------------+
 |    User (Browser)    |
 +----------+-----------+
@@ -66,7 +66,7 @@ This project demonstrates a real-world cloud architecture using API Gateway, Lam
 
 
 
----
+
 
 ## ⚙️ Tech Stack
 
