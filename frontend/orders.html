@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Orders</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+body{
+    margin:0;
+    font-family:"Times New Roman", Times, serif;
+    background:#f3e8ff;
+    color:black;
+}
+
+.navbar{
+    background:#d8b4fe;
+    padding:18px 30px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:15px;
+}
+
+.logo{
+    font-size:30px;
+    font-weight:bold;
+}
+
+.nav-links{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    flex-wrap:wrap;
+}
+
+.nav-links a,
+.nav-links span{
+    background:white;
+    color:black;
+    text-decoration:none;
+    border-radius:50%;
+    width:45px;
+    height:45px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:18px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.08);
+    transition:0.2s;
+}
+
+.nav-links i{
+    font-size:18px;
+}
+
+.nav-links a:hover{
+    transform:scale(1.1);
+    background:#ede9fe;
+}
+
+#user-info{
+    border-radius:20px;
+    padding:6px 14px;
+    width:auto;
+    height:auto;
+    font-size:15px;
+    cursor:default;
+}
+
+.container{
+    padding:40px;
+}
+
+.order-card{
+    background:white;
+    padding:20px;
+    margin:20px 0;
+    border-radius:14px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.06);
+}
+
+.order-card h3{
+    margin-top:0;
+}
+
+.order-card ul{
+    margin-bottom:0;
+}
+</style>
+</head>
+<body>
+
+<div class="navbar">
+    <div class="logo">📚 Kaviya's BookStore</div>
+    <div class="nav-links">
+        <a href="index.html" title="Home"><i class="fa-solid fa-house"></i></a>
+        <a href="products.html" title="Books"><i class="fa-solid fa-book"></i></a>
+        <a href="cart.html" title="Cart"><i class="fa-solid fa-cart-shopping"></i></a>
+        <a href="orders.html" title="Orders"><i class="fa-solid fa-box"></i></a>
+        <a href="profile.html" title="Profile"><i class="fa-solid fa-user"></i></a>
+        <span id="user-info"></span>
+        <a href="javascript:void(0)" onclick="logout()" title="Logout">
+            <i class="fa-solid fa-right-from-bracket"></i>
+        </a>
+    </div>
+</div>
+
+<div class="container">
+    <h2>📦 Your Orders</h2>
+    <div id="orders"></div>
+</div>
+
+<script>
+const user = JSON.parse(localStorage.getItem("user"));
+
+if (!user) {
+    alert("Please login first");
+    window.location.href = "login.html";
+}
+
+document.getElementById("user-info").innerText = `Hi, ${user.name}`;
+
+const ORDER_API = "https://sxaii3xfgf.execute-api.ap-southeast-1.amazonaws.com/S1/orders";
+
+function logout() {
+    localStorage.removeItem("user");
+    window.location.href = "login.html";
+}
+
+async function loadOrders() {
+    try{
+        const res = await fetch(`${ORDER_API}?user_id=${encodeURIComponent(user.email)}`);
+        const orders = await res.json();
+
+        let html = "";
+
+        if (!res.ok) {
+            alert(orders.error || orders.message || "Failed to load orders");
+            return;
+        }
+
+        if (!orders || orders.length === 0) {
+            html = "<p>No orders found</p>";
+        } else {
+            orders.slice().reverse().forEach(order => {
+                html += `
+                <div class="order-card">
+                    <h3>Order ID: ${order.orderId}</h3>
+                    <p><b>Total:</b> ₹${order.total}</p>
+                    <p><b>Books:</b></p>
+                    <ul>
+                        ${(order.items || []).map(item =>
+                            `<li>${item.title} × ${item.qty} - ₹${item.price}</li>`
+                        ).join("")}
+                    </ul>
+                </div>`;
+            });
+        }
+
+        document.getElementById("orders").innerHTML = html;
+    } catch(err){
+        console.error("Load orders error:", err);
+        alert("API error while loading orders");
+    }
+}
+
+loadOrders();
+</script>
+
+</body>
+</html>

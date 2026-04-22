@@ -1,0 +1,172 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Signup</title>
+
+<style>
+body{
+    margin:0;
+    font-family:"Times New Roman", Times, serif;
+    background:#f3e8ff;
+    color:black;
+}
+
+.navbar{
+    background:#d8b4fe;
+    padding:18px 40px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.logo{
+    font-size:30px;
+    font-weight:bold;
+}
+
+.nav-links a{
+    text-decoration:none;
+    color:black;
+    margin-left:25px;
+    font-size:20px;
+    font-weight:bold;
+}
+
+.container{
+    padding:40px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+
+.card{
+    background:white;
+    padding:35px;
+    border-radius:18px;
+    box-shadow:0 4px 15px rgba(0,0,0,0.08);
+    width:100%;
+    max-width:420px;
+}
+
+.card h2{
+    text-align:center;
+    margin-bottom:25px;
+}
+
+input, select{
+    width:100%;
+    padding:12px;
+    margin-bottom:16px;
+    border:1px solid #d1d5db;
+    border-radius:10px;
+    font-size:17px;
+    font-family:"Times New Roman", Times, serif;
+    box-sizing:border-box;
+}
+
+button{
+    background:#d8b4fe;
+    border:none;
+    padding:10px 18px;
+    border-radius:10px;
+    cursor:pointer;
+    font-size:18px;
+    margin-top:10px;
+    width:100%;
+    font-family:"Times New Roman", Times, serif;
+}
+
+.bottom-text{
+    text-align:center;
+    margin-top:18px;
+    font-size:18px;
+}
+
+.bottom-text a{
+    text-decoration:none;
+    color:black;
+    font-weight:bold;
+}
+</style>
+</head>
+
+<body>
+
+<div class="navbar">
+    <div class="logo">📚 Kaviya's BookStore</div>
+    <div class="nav-links">
+        <a href="index.html">Home</a>
+        <a href="products.html">Books</a>
+        <a href="login.html">Login</a>
+    </div>
+</div>
+
+<div class="container">
+    <div class="card">
+        <h2>📝 Create Account</h2>
+
+        <input type="text" id="name" placeholder="Enter your name">
+        <input type="email" id="email" placeholder="Enter your email">
+        <input type="password" id="password" placeholder="Enter your password">
+
+        <select id="role">
+            <option value="customer">Customer</option>
+            <option value="admin">Admin</option>
+        </select>
+
+        <button onclick="signup()">Signup</button>
+
+        <div class="bottom-text">
+            Already have an account? <a href="login.html">Login</a>
+        </div>
+    </div>
+</div>
+
+<script>
+const AUTH_API = "https://iyueqkeyjh.execute-api.ap-southeast-1.amazonaws.com/dev";
+
+async function signup() {
+    const name = document.getElementById("name").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value.trim();
+    const role = document.getElementById("role").value;
+
+    if (!name || !email || !password) {
+        alert("Please fill all fields");
+        return;
+    }
+
+    try {
+        const res = await fetch(`${AUTH_API}/signup`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                name,
+                email,
+                password,
+                role
+            })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            alert(data.message || "Signup failed");
+            return;
+        }
+
+        alert("Signup successful");
+        window.location.href = "login.html";
+    } catch (err) {
+        console.error("Signup error:", err);
+        alert("API error while signing up");
+    }
+}
+</script>
+
+</body>
+</html>
