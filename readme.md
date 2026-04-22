@@ -26,47 +26,26 @@ This project demonstrates a real-world cloud architecture using API Gateway, Lam
 
 ## 🏗️ Architecture Overview
 
-
-+----------------------+
-|    User (Browser)    |
-+----------+-----------+
-           |
-           v
-+----------------------+
-|   CloudFront (CDN)   |
-+----------+-----------+
-           |
-           v
-+----------------------+
-| S3 (Static Frontend) |
-+----------+-----------+
-           |
-           v
-+----------------------+
-| API Gateway (REST)   |
-+----+---------+-------+------+
-     |         |              |
-     |         |              |
-     v         v              v
-+---------+ +---------+   +---------+   +---------+
-| Auth API| |Product  |   | Cart API|   |Order API|
-+----+----+ |  API    |   +----+----+   +----+----+
-     |      +----+----+        |              |
-     v           |             v              v
-+---------+      v         +---------+    +---------+
-| Lambda  |  +---------+   | Lambda  |    | Lambda  |
-+----+----+  | Lambda  |   +----+----+    +----+----+
-     |       +----+----+        |              |
-     v            |             v              v
-+---------+       v         +---------+    +---------+
-|DynamoDB |   +---------+   |DynamoDB |    |DynamoDB |
-|(Users)  |   |DynamoDB |   | (Cart)  |    |(Orders) |
-+---------+   |Products |   +---------+    +---------+
-              +---------+
-
-
-
-
+                User (Browser)
+                        │
+                        ▼
+              CloudFront (CDN)
+                        │
+                        ▼
+            S3 (Static Website)
+                        │
+                        ▼
+                 API Gateway
+          ┌───────────┬───────────┬───────────┐
+          ▼           ▼           ▼
+     Product API   Cart API    Order API
+          │           │           │
+          ▼           ▼           ▼
+        Lambda      Lambda      Lambda
+          │           │           │
+          ▼           ▼           ▼
+     DynamoDB      DynamoDB      DynamoDB
+    (Products)      (Cart)       (Orders)
 
 ## ⚙️ Tech Stack
 
