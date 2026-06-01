@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html>
 <head>
@@ -77,6 +78,10 @@ button{
     font-family:"Times New Roman", Times, serif;
 }
 
+button:hover{
+    background:#c084fc;
+}
+
 .bottom-text{
     text-align:center;
     margin-top:18px;
@@ -136,8 +141,8 @@ async function login() {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                email,
-                password
+                email: email,
+                password: password
             })
         });
 
@@ -148,9 +153,17 @@ async function login() {
             return;
         }
 
-        localStorage.setItem("user", JSON.stringify(data.user));
+        const loggedUser = {
+            name: data.user.name,
+            email: data.user.email,
+            role: data.user.role || "customer"
+        };
+
+        localStorage.setItem("user", JSON.stringify(loggedUser));
+
         alert("Login successful");
         window.location.href = "products.html";
+
     } catch (err) {
         console.error("Login error:", err);
         alert("API error while logging in");
@@ -160,3 +173,4 @@ async function login() {
 
 </body>
 </html>
+```

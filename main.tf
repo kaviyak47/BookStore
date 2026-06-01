@@ -1,40 +1,93 @@
+
 # -------------------------
-# S3 Bucket (Frontend Hosting)
+# S3 Bucket - Private Frontend
 # -------------------------
 resource "aws_s3_bucket" "frontend_bucket" {
   bucket = "kaviya-bookstore-frontend"
 }
 
-# -------------------------
-# Public Access Block
-# -------------------------
 resource "aws_s3_bucket_public_access_block" "public" {
   bucket = aws_s3_bucket.frontend_bucket.id
 
-  block_public_acls       = false
-  block_public_policy     = false
-  restrict_public_buckets = false
-  ignore_public_acls      = false
+  block_public_acls       = true
+  block_public_policy     = true
+  restrict_public_buckets = true
+  ignore_public_acls      = true
 }
 
 # -------------------------
-# Bucket Policy (Public Read)
+# CloudFront OAC
+# -------------------------
+resource "aws_cloudfront_origin_access_control" "oac" {
+  name                              = "kaviya-bookstore-oac"
+  description                       = "OAC for private S3 frontend bucket"
+  origin_access_control_origin_type = "s3"
+  signing_behavior                  = "always"
+  signing_protocol                  = "sigv4"
+}
+
+# -------------------------
+# CloudFront CDN
+# -------------------------
+resource "aws_cloudfront_distribution" "cdn" {
+  enabled             = true
+  default_root_object = "index.html"
+
+  origin {
+    domain_name              = aws_s3_bucket.frontend_bucket.bucket_regional_domain_name
+    origin_id                = "frontendS3"
+    origin_access_control_id = aws_cloudfront_origin_access_control.oac.id
+  }
+
+  default_cache_behavior {
+    target_origin_id       = "frontendS3"
+    viewer_protocol_policy = "redirect-to-https"
+
+    allowed_methods = ["GET", "HEAD"]
+    cached_methods  = ["GET", "HEAD"]
+
+    forwarded_values {
+      query_string = false
+
+      cookies {
+        forward = "none"
+      }
+    }
+  }
+
+  restrictions {
+    geo_restriction {
+      restriction_type = "none"
+    }
+  }
+
+  viewer_certificate {
+    cloudfront_default_certificate = true
+  }
+}
+
+# -------------------------
+# Bucket Policy - Allow Only CloudFront
 # -------------------------
 resource "aws_s3_bucket_policy" "policy" {
   bucket = aws_s3_bucket.frontend_bucket.id
 
-  depends_on = [
-    aws_s3_bucket_public_access_block.public
-  ]
-
   policy = jsonencode({
-    Version = "2012-10-17",
+    Version = "2012-10-17"
     Statement = [
       {
-        Effect    = "Allow",
-        Principal = "*",
-        Action    = "s3:GetObject",
-        Resource  = "${aws_s3_bucket.frontend_bucket.arn}/*"
+        Sid    = "AllowCloudFrontServicePrincipal"
+        Effect = "Allow"
+        Principal = {
+          Service = "cloudfront.amazonaws.com"
+        }
+        Action   = "s3:GetObject"
+        Resource = "${aws_s3_bucket.frontend_bucket.arn}/*"
+        Condition = {
+          StringEquals = {
+            "AWS:SourceArn" = aws_cloudfront_distribution.cdn.arn
+          }
+        }
       }
     ]
   })
@@ -71,43 +124,25 @@ resource "aws_s3_object" "orders" {
   content_type = "text/html"
 }
 
-# -------------------------
-# CloudFront CDN
-# -------------------------
-resource "aws_cloudfront_distribution" "cdn" {
-  enabled             = true
-  default_root_object = "index.html"
+resource "aws_s3_object" "signup" {
+  bucket       = aws_s3_bucket.frontend_bucket.id
+  key          = "signup.html"
+  source       = "frontend/signup.html"
+  content_type = "text/html"
+}
 
-  origin {
-    domain_name = aws_s3_bucket.frontend_bucket.bucket_regional_domain_name
-    origin_id   = "frontendS3"
-  }
+resource "aws_s3_object" "login" {
+  bucket       = aws_s3_bucket.frontend_bucket.id
+  key          = "login.html"
+  source       = "frontend/login.html"
+  content_type = "text/html"
+}
 
-  default_cache_behavior {
-    target_origin_id       = "frontendS3"
-    viewer_protocol_policy = "redirect-to-https"
-
-    allowed_methods = ["GET", "HEAD"]
-    cached_methods  = ["GET", "HEAD"]
-
-    forwarded_values {
-      query_string = false
-
-      cookies {
-        forward = "none"
-      }
-    }
-  }
-
-  restrictions {
-    geo_restriction {
-      restriction_type = "none"
-    }
-  }
-
-  viewer_certificate {
-    cloudfront_default_certificate = true
-  }
+resource "aws_s3_object" "profile" {
+  bucket       = aws_s3_bucket.frontend_bucket.id
+  key          = "profile.html"
+  source       = "frontend/profile.html"
+  content_type = "text/html"
 }
 
 # =====================================================
@@ -143,10 +178,26 @@ resource "aws_api_gateway_method" "products_get" {
   authorization = "NONE"
 }
 
+resource "aws_api_gateway_method" "products_post" {
+  rest_api_id   = aws_api_gateway_rest_api.product_api.id
+  resource_id   = aws_api_gateway_resource.products.id
+  http_method   = "POST"
+  authorization = "NONE"
+}
+
 resource "aws_api_gateway_integration" "products_lambda" {
   rest_api_id             = aws_api_gateway_rest_api.product_api.id
   resource_id             = aws_api_gateway_resource.products.id
   http_method             = aws_api_gateway_method.products_get.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.product_service.invoke_arn
+}
+
+resource "aws_api_gateway_integration" "products_post_lambda" {
+  rest_api_id             = aws_api_gateway_rest_api.product_api.id
+  resource_id             = aws_api_gateway_resource.products.id
+  http_method             = aws_api_gateway_method.products_post.http_method
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
   uri                     = aws_lambda_function.product_service.invoke_arn
@@ -164,7 +215,8 @@ resource "aws_api_gateway_deployment" "product_deploy" {
   rest_api_id = aws_api_gateway_rest_api.product_api.id
 
   depends_on = [
-    aws_api_gateway_integration.products_lambda
+    aws_api_gateway_integration.products_lambda,
+    aws_api_gateway_integration.products_post_lambda
   ]
 }
 
@@ -207,10 +259,26 @@ resource "aws_api_gateway_method" "cart_get" {
   authorization = "NONE"
 }
 
+resource "aws_api_gateway_method" "cart_post" {
+  rest_api_id   = aws_api_gateway_rest_api.cart_api.id
+  resource_id   = aws_api_gateway_resource.cart.id
+  http_method   = "POST"
+  authorization = "NONE"
+}
+
 resource "aws_api_gateway_integration" "cart_lambda" {
   rest_api_id             = aws_api_gateway_rest_api.cart_api.id
   resource_id             = aws_api_gateway_resource.cart.id
   http_method             = aws_api_gateway_method.cart_get.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.cart_service.invoke_arn
+}
+
+resource "aws_api_gateway_integration" "cart_post_lambda" {
+  rest_api_id             = aws_api_gateway_rest_api.cart_api.id
+  resource_id             = aws_api_gateway_resource.cart.id
+  http_method             = aws_api_gateway_method.cart_post.http_method
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
   uri                     = aws_lambda_function.cart_service.invoke_arn
@@ -227,9 +295,10 @@ resource "aws_lambda_permission" "allow_api_gateway_cart" {
 resource "aws_api_gateway_deployment" "cart_deploy" {
   rest_api_id = aws_api_gateway_rest_api.cart_api.id
 
-  depends_on = [
-    aws_api_gateway_integration.cart_lambda
-  ]
+ depends_on = [
+  aws_api_gateway_integration.cart_lambda,
+  aws_api_gateway_integration.cart_post_lambda
+]
 }
 
 resource "aws_api_gateway_stage" "cart_stage" {
@@ -301,6 +370,10 @@ resource "aws_api_gateway_stage" "order_stage" {
   rest_api_id   = aws_api_gateway_rest_api.order_api.id
   stage_name    = "dev"
 }
+
+# =====================================================
+# DYNAMODB TABLES
+# =====================================================
 resource "aws_dynamodb_table" "cart_table" {
   name         = "Kaviya-Cart"
   billing_mode = "PAY_PER_REQUEST"
@@ -316,13 +389,8 @@ resource "aws_dynamodb_table" "cart_table" {
     name = "product_id"
     type = "N"
   }
-
-  tags = {
-    Name        = "Kaviya-Cart"
-    Environment = "dev"
-    Project     = "BookStore"
-  }
 }
+
 resource "aws_dynamodb_table" "users" {
   name         = "Kaviya-Users"
   billing_mode = "PAY_PER_REQUEST"
@@ -332,12 +400,11 @@ resource "aws_dynamodb_table" "users" {
     name = "email"
     type = "S"
   }
-
-  tags = {
-    Name    = "Kaviya-Users"
-    Project = "BookStore"
-  }
 }
+
+# =====================================================
+# AUTH LAMBDA ROLE
+# =====================================================
 resource "aws_iam_role" "auth_lambda_role" {
   name = "auth_lambda_role"
 
@@ -365,6 +432,9 @@ resource "aws_iam_role_policy_attachment" "auth_lambda_dynamo" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess"
 }
 
+# =====================================================
+# AUTH LAMBDA
+# =====================================================
 resource "aws_lambda_function" "auth_lambda" {
   function_name = "Kaviya-Auth-Service"
   role          = aws_iam_role.auth_lambda_role.arn
@@ -374,6 +444,7 @@ resource "aws_lambda_function" "auth_lambda" {
   filename         = "lambda/dist/auth.zip"
   source_code_hash = filebase64sha256("lambda/dist/auth.zip")
 }
+
 # =====================================================
 # API GATEWAY - AUTH SERVICE
 # =====================================================
@@ -393,9 +464,6 @@ resource "aws_api_gateway_resource" "login_resource" {
   path_part   = "login"
 }
 
-# -------------------------
-# SIGNUP POST
-# -------------------------
 resource "aws_api_gateway_method" "signup_post" {
   rest_api_id   = aws_api_gateway_rest_api.auth_api.id
   resource_id   = aws_api_gateway_resource.signup_resource.id
@@ -412,9 +480,6 @@ resource "aws_api_gateway_integration" "signup_post_integration" {
   uri                     = aws_lambda_function.auth_lambda.invoke_arn
 }
 
-# -------------------------
-# LOGIN POST
-# -------------------------
 resource "aws_api_gateway_method" "login_post" {
   rest_api_id   = aws_api_gateway_rest_api.auth_api.id
   resource_id   = aws_api_gateway_resource.login_resource.id
@@ -431,115 +496,6 @@ resource "aws_api_gateway_integration" "login_post_integration" {
   uri                     = aws_lambda_function.auth_lambda.invoke_arn
 }
 
-# -------------------------
-# SIGNUP OPTIONS
-# -------------------------
-resource "aws_api_gateway_method" "signup_options" {
-  rest_api_id   = aws_api_gateway_rest_api.auth_api.id
-  resource_id   = aws_api_gateway_resource.signup_resource.id
-  http_method   = "OPTIONS"
-  authorization = "NONE"
-}
-
-resource "aws_api_gateway_integration" "signup_options_integration" {
-  rest_api_id = aws_api_gateway_rest_api.auth_api.id
-  resource_id = aws_api_gateway_resource.signup_resource.id
-  http_method = aws_api_gateway_method.signup_options.http_method
-  type        = "MOCK"
-
-  request_templates = {
-    "application/json" = "{\"statusCode\": 200}"
-  }
-}
-
-resource "aws_api_gateway_method_response" "signup_options_response" {
-  rest_api_id = aws_api_gateway_rest_api.auth_api.id
-  resource_id = aws_api_gateway_resource.signup_resource.id
-  http_method = aws_api_gateway_method.signup_options.http_method
-  status_code = "200"
-
-  response_models = {
-    "application/json" = "Empty"
-  }
-
-  response_parameters = {
-    "method.response.header.Access-Control-Allow-Headers" = true
-    "method.response.header.Access-Control-Allow-Methods" = true
-    "method.response.header.Access-Control-Allow-Origin"  = true
-  }
-}
-
-resource "aws_api_gateway_integration_response" "signup_options_integration_response" {
-  rest_api_id = aws_api_gateway_rest_api.auth_api.id
-  resource_id = aws_api_gateway_resource.signup_resource.id
-  http_method = aws_api_gateway_method.signup_options.http_method
-  status_code = aws_api_gateway_method_response.signup_options_response.status_code
-
-  response_parameters = {
-    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type'"
-    "method.response.header.Access-Control-Allow-Methods" = "'POST,OPTIONS'"
-    "method.response.header.Access-Control-Allow-Origin"  = "'*'"
-  }
-
-  depends_on = [aws_api_gateway_integration.signup_options_integration]
-}
-
-# -------------------------
-# LOGIN OPTIONS
-# -------------------------
-resource "aws_api_gateway_method" "login_options" {
-  rest_api_id   = aws_api_gateway_rest_api.auth_api.id
-  resource_id   = aws_api_gateway_resource.login_resource.id
-  http_method   = "OPTIONS"
-  authorization = "NONE"
-}
-
-resource "aws_api_gateway_integration" "login_options_integration" {
-  rest_api_id = aws_api_gateway_rest_api.auth_api.id
-  resource_id = aws_api_gateway_resource.login_resource.id
-  http_method = aws_api_gateway_method.login_options.http_method
-  type        = "MOCK"
-
-  request_templates = {
-    "application/json" = "{\"statusCode\": 200}"
-  }
-}
-
-resource "aws_api_gateway_method_response" "login_options_response" {
-  rest_api_id = aws_api_gateway_rest_api.auth_api.id
-  resource_id = aws_api_gateway_resource.login_resource.id
-  http_method = aws_api_gateway_method.login_options.http_method
-  status_code = "200"
-
-  response_models = {
-    "application/json" = "Empty"
-  }
-
-  response_parameters = {
-    "method.response.header.Access-Control-Allow-Headers" = true
-    "method.response.header.Access-Control-Allow-Methods" = true
-    "method.response.header.Access-Control-Allow-Origin"  = true
-  }
-}
-
-resource "aws_api_gateway_integration_response" "login_options_integration_response" {
-  rest_api_id = aws_api_gateway_rest_api.auth_api.id
-  resource_id = aws_api_gateway_resource.login_resource.id
-  http_method = aws_api_gateway_method.login_options.http_method
-  status_code = aws_api_gateway_method_response.login_options_response.status_code
-
-  response_parameters = {
-    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type'"
-    "method.response.header.Access-Control-Allow-Methods" = "'POST,OPTIONS'"
-    "method.response.header.Access-Control-Allow-Origin"  = "'*'"
-  }
-
-  depends_on = [aws_api_gateway_integration.login_options_integration]
-}
-
-# -------------------------
-# API Gateway Permission
-# -------------------------
 resource "aws_lambda_permission" "allow_apigw_auth" {
   statement_id  = "AllowExecutionFromAPIGatewayAuth"
   action        = "lambda:InvokeFunction"
@@ -548,17 +504,12 @@ resource "aws_lambda_permission" "allow_apigw_auth" {
   source_arn    = "${aws_api_gateway_rest_api.auth_api.execution_arn}/*/*"
 }
 
-# -------------------------
-# Deployment
-# -------------------------
 resource "aws_api_gateway_deployment" "auth_deploy" {
   rest_api_id = aws_api_gateway_rest_api.auth_api.id
 
   depends_on = [
     aws_api_gateway_integration.signup_post_integration,
-    aws_api_gateway_integration.login_post_integration,
-    aws_api_gateway_integration.signup_options_integration,
-    aws_api_gateway_integration.login_options_integration
+    aws_api_gateway_integration.login_post_integration
   ]
 }
 
@@ -567,22 +518,4 @@ resource "aws_api_gateway_stage" "auth_stage" {
   rest_api_id   = aws_api_gateway_rest_api.auth_api.id
   stage_name    = "dev"
 }
-resource "aws_s3_object" "signup" {
-  bucket       = aws_s3_bucket.frontend_bucket.id
-  key          = "signup.html"
-  source       = "frontend/signup.html"
-  content_type = "text/html"
-}
 
-resource "aws_s3_object" "login" {
-  bucket       = aws_s3_bucket.frontend_bucket.id
-  key          = "login.html"
-  source       = "frontend/login.html"
-  content_type = "text/html"
-}
-resource "aws_s3_object" "profile" {
-  bucket       = aws_s3_bucket.frontend_bucket.id
-  key          = "profile.html"
-  source       = "frontend/profile.html"
-  content_type = "text/html"
-}

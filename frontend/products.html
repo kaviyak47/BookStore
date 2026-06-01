@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html>
 <head>
@@ -53,10 +54,6 @@ body{
     transition:0.2s;
 }
 
-.nav-links i{
-    font-size:18px;
-}
-
 .nav-links a:hover{
     transform:scale(1.1);
     background:#ede9fe;
@@ -68,11 +65,35 @@ body{
     width:auto;
     height:auto;
     font-size:15px;
-    cursor:default;
 }
 
 .container{
     padding:40px;
+}
+
+.form-card{
+    background:white;
+    padding:25px;
+    border-radius:18px;
+    box-shadow:0 4px 15px rgba(0,0,0,0.08);
+    margin-bottom:35px;
+}
+
+.form-card input,
+.search-box{
+    width:100%;
+    padding:12px;
+    margin:8px 0;
+    border:1px solid #ccc;
+    border-radius:10px;
+    font-size:16px;
+    box-sizing:border-box;
+    font-family:"Times New Roman", Times, serif;
+}
+
+.search-box{
+    max-width:450px;
+    margin-bottom:25px;
 }
 
 .grid{
@@ -107,6 +128,18 @@ button{
     margin-top:10px;
     font-family:"Times New Roman", Times, serif;
 }
+
+button:hover{
+    background:#c084fc;
+}
+
+.empty-message{
+    background:white;
+    padding:25px;
+    border-radius:18px;
+    text-align:center;
+    font-size:20px;
+}
 </style>
 </head>
 
@@ -128,8 +161,32 @@ button{
 </div>
 
 <div class="container">
+
+    <div id="admin-section">
+        <h2>➕ Admin: Add New Book</h2>
+
+        <div class="form-card">
+            <input type="number" id="bookId" placeholder="Book ID">
+            <input type="text" id="bookTitle" placeholder="Book Name">
+            <input type="text" id="bookAuthor" placeholder="Author Name">
+            <input type="number" id="bookPrice" placeholder="Price">
+            <input type="text" id="bookImage" placeholder="Image URL">
+            <button onclick="addProduct()">Add Product</button>
+        </div>
+    </div>
+
     <h2>📖 Available Books</h2>
+
+    <input 
+        type="text" 
+        id="searchBox" 
+        class="search-box" 
+        placeholder="🔍 Search books by title or author..." 
+        onkeyup="searchProducts()"
+    >
+
     <div class="grid" id="list"></div>
+
 </div>
 
 <script>
@@ -142,27 +199,114 @@ if (!user) {
 
 document.getElementById("user-info").innerText = `Hi, ${user.name}`;
 
+const role = user.role || "customer";
+
+if (role !== "admin") {
+    document.getElementById("admin-section").style.display = "none";
+}
+
 const API = "https://jxjo2t0ulj.execute-api.ap-southeast-1.amazonaws.com/S1";
 
 let products = [];
 
-const authorMap = {
-    "The Alchemist": "Paulo Coelho",
-    "Atomic Habits": "James Clear",
-    "Clean Code": "Robert C. Martin",
-    "Deep Work": "Cal Newport"
+const defaultBookDetails = {
+    "The Alchemist": {
+        author: "Paulo Coelho",
+        image: "https://covers.openlibrary.org/b/isbn/9780061122415-L.jpg"
+    },
+    "Atomic Habits": {
+        author: "James Clear",
+        image: "https://covers.openlibrary.org/b/isbn/9780735211292-L.jpg"
+    },
+    "Clean Code": {
+        author: "Robert C. Martin",
+        image: "https://covers.openlibrary.org/b/isbn/9780132350884-L.jpg"
+    },
+    "Deep Work": {
+        author: "Cal Newport",
+        image: "https://covers.openlibrary.org/b/isbn/9781455586691-L.jpg"
+    },
+    "It Ends With Us": {
+        author: "Colleen Hoover",
+        image: "https://covers.openlibrary.org/b/isbn/9781501110368-L.jpg"
+    },
+    "It Starts With Us": {
+        author: "Colleen Hoover",
+        image: "https://covers.openlibrary.org/b/isbn/9781668001226-L.jpg"
+    },
+    "The Psychology of Money": {
+        author: "Morgan Housel",
+        image: "https://covers.openlibrary.org/b/isbn/9780857197689-L.jpg"
+    },
+    "Rich Dad Poor Dad": {
+        author: "Robert T. Kiyosaki",
+        image: "https://covers.openlibrary.org/b/isbn/9781612680194-L.jpg"
+    },
+    "2 States": {
+        author: "Chetan Bhagat",
+        image: "https://covers.openlibrary.org/b/isbn/9788129115300-L.jpg"
+    },
+    "Five Point Someone": {
+        author: "Chetan Bhagat",
+        image: "https://covers.openlibrary.org/b/isbn/9788129135490-L.jpg"
+    }
 };
 
-const imageMap = {
-    "The Alchemist": "https://kaviya-bookstore-frontend.s3.ap-southeast-1.amazonaws.com/images/alchemist.jpg",
-    "Atomic Habits": "https://kaviya-bookstore-frontend.s3.ap-southeast-1.amazonaws.com/images/atomic-habits.webp",
-    "Clean Code": "https://kaviya-bookstore-frontend.s3.ap-southeast-1.amazonaws.com/images/clean-code.webp",
-    "Deep Work": "https://kaviya-bookstore-frontend.s3.ap-southeast-1.amazonaws.com/images/deep-work.webp"
-};
+let savedBookDetails = JSON.parse(localStorage.getItem("bookDetails")) || {};
+let bookDetails = { ...defaultBookDetails, ...savedBookDetails };
+
+function saveBookDetails() {
+    localStorage.setItem("bookDetails", JSON.stringify(bookDetails));
+}
 
 function logout() {
     localStorage.removeItem("user");
     window.location.href = "login.html";
+}
+
+function renderProducts(productList) {
+    let html = "";
+
+    if (productList.length === 0) {
+        document.getElementById("list").innerHTML = `
+            <div class="empty-message">No books found</div>
+        `;
+        return;
+    }
+
+    productList.forEach((p) => {
+        const details = bookDetails[p.title] || {};
+        const author = p.author || details.author || "Unknown Author";
+        const image = p.image || details.image || "https://via.placeholder.com/120x170?text=Book";
+        const originalIndex = products.findIndex(item => item.id === p.id);
+
+        html += `
+        <div class="card">
+            <img src="${image}" alt="${p.title}">
+            <h3>${p.title}</h3>
+            <p><i>by ${author}</i></p>
+            <p><b>₹${p.price}</b></p>
+            <button onclick="addToCart(${originalIndex})">Add to Cart</button>
+        </div>`;
+    });
+
+    document.getElementById("list").innerHTML = html;
+}
+
+function searchProducts() {
+    const searchText = document.getElementById("searchBox").value.toLowerCase().trim();
+
+    const filteredProducts = products.filter((p) => {
+        const details = bookDetails[p.title] || {};
+        const author = p.author || details.author || "";
+
+        return (
+            p.title.toLowerCase().includes(searchText) ||
+            author.toLowerCase().includes(searchText)
+        );
+    });
+
+    renderProducts(filteredProducts);
 }
 
 async function loadProducts(){
@@ -176,29 +320,88 @@ async function loadProducts(){
         }
 
         products = Array.isArray(data) ? data : [];
+        renderProducts(products);
 
-        let html = "";
-
-        products.forEach((p, i) => {
-            html += `
-            <div class="card">
-                <img src="${imageMap[p.title] || ''}" alt="${p.title}">
-                <h3>${p.title}</h3>
-                <p><i>by ${authorMap[p.title] || "Unknown Author"}</i></p>
-                <p><b>₹${p.price}</b></p>
-                <button onclick="addToCart(${i})">Add to Cart</button>
-            </div>`;
-        });
-
-        document.getElementById("list").innerHTML = html;
     } catch(err){
         console.error("Load products error:", err);
         alert("API error while loading products");
     }
 }
 
+async function addProduct(){
+    if (role !== "admin") {
+        alert("Only admin can add products");
+        return;
+    }
+
+    const id = Number(document.getElementById("bookId").value);
+    const title = document.getElementById("bookTitle").value.trim();
+    const author = document.getElementById("bookAuthor").value.trim();
+    const price = Number(document.getElementById("bookPrice").value);
+    const image = document.getElementById("bookImage").value.trim();
+
+    if (!id || !title || !author || !price || !image) {
+        alert("Please fill all fields");
+        return;
+    }
+
+    const payload = {
+        product: {
+            id: id,
+            title: title,
+            price: price,
+            author: author,
+            image: image
+        }
+    };
+
+    try{
+        const res = await fetch(`${API}/products`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            alert(data.message || data.error || "Failed to add product");
+            return;
+        }
+
+        bookDetails[title] = {
+            author: author,
+            image: image
+        };
+
+        saveBookDetails();
+
+        alert("Product added successfully");
+
+        document.getElementById("bookId").value = "";
+        document.getElementById("bookTitle").value = "";
+        document.getElementById("bookAuthor").value = "";
+        document.getElementById("bookPrice").value = "";
+        document.getElementById("bookImage").value = "";
+        document.getElementById("searchBox").value = "";
+
+        loadProducts();
+
+    } catch(err){
+        console.error("Add product error:", err);
+        alert("API error while adding product");
+    }
+}
+
 async function addToCart(index){
     const product = products[index];
+
+    if (!product) {
+        alert("Product not found");
+        return;
+    }
 
     const payload = {
         user_id: user.email,
@@ -225,6 +428,7 @@ async function addToCart(index){
         }
 
         alert(data.message || "Added to cart");
+
     } catch(err){
         console.error("Add to cart error:", err);
         alert("API error while adding to cart");
@@ -236,3 +440,4 @@ loadProducts();
 
 </body>
 </html>
+```
