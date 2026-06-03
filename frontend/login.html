@@ -1,4 +1,4 @@
-```html
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -147,19 +147,37 @@ async function login() {
         });
 
         const data = await res.json();
+        console.log("LOGIN RESPONSE:", data);
 
         if (!res.ok) {
             alert(data.message || "Login failed");
             return;
         }
 
+        if (!data.user) {
+            alert("Login response missing user data");
+            return;
+        }
+
+        if (!data.token) {
+            alert("Login successful, but token missing. Check Auth Lambda code.");
+            return;
+        }
+
         const loggedUser = {
-            name: data.user.name,
             email: data.user.email,
+            name: data.user.name,
             role: data.user.role || "customer"
         };
 
+        localStorage.removeItem("user");
+        localStorage.removeItem("token");
+
         localStorage.setItem("user", JSON.stringify(loggedUser));
+        localStorage.setItem("token", data.token);
+
+        console.log("SAVED USER:", localStorage.getItem("user"));
+        console.log("SAVED TOKEN:", localStorage.getItem("token"));
 
         alert("Login successful");
         window.location.href = "products.html";
@@ -173,4 +191,3 @@ async function login() {
 
 </body>
 </html>
-```

@@ -1,4 +1,4 @@
-```html
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -261,6 +261,7 @@ function saveBookDetails() {
 
 function logout() {
     localStorage.removeItem("user");
+    localStorage.removeItem("token");
     window.location.href = "login.html";
 }
 
@@ -358,9 +359,10 @@ async function addProduct(){
     try{
         const res = await fetch(`${API}/products`, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
+           headers: {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer " + localStorage.getItem("token")
+},
             body: JSON.stringify(payload)
         });
 
@@ -440,4 +442,4 @@ loadProducts();
 
 </body>
 </html>
-```
+
