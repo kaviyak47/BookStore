@@ -218,10 +218,8 @@ py -m pytest -v
 ## 👩‍💻 Author
 
 **Kaviya K**  
-B.Tech — Computer Science and Business Systems (CSBS)
+
 
 ---
 
-<div align="center">
-  <sub>Built with ❤️ on AWS · Deployed serverlessly · Powered by cloud-native architecture</sub>
-</div>
+
