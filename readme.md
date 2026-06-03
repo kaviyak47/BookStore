@@ -7,7 +7,7 @@
 [![AWS](https://img.shields.io/badge/AWS-Cloud-orange?logo=amazon-aws)](https://aws.amazon.com/)
 [![Python](https://img.shields.io/badge/Python-3.x-blue?logo=python)](https://www.python.org/)
 [![Terraform](https://img.shields.io/badge/IaC-Terraform-purple?logo=terraform)](https://www.terraform.io/)
-[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
+
 
 [🌐 Live Demo](https://d2zskisrlfiy3d.cloudfront.net) · [📁 Repository](https://github.com/kaviyak47/BookStore)
 
