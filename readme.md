@@ -8,8 +8,8 @@
 [![Python](https://img.shields.io/badge/Python-3.x-blue?logo=python)](https://www.python.org/)
 [![Terraform](https://img.shields.io/badge/IaC-Terraform-purple?logo=terraform)](https://www.terraform.io/)
 
-
-[🌐 Live Demo](https://d2zskisrlfiy3d.cloudfront.net) · [📁 Repository](https://github.com/kaviyak47/BookStore)
+🌐 **Live Demo:** [https://d2zskisrlfiy3d.cloudfront.net](https://d2zskisrlfiy3d.cloudfront.net)  
+📁 **Repository:** [https://github.com/kaviyak47/BookStore](https://github.com/kaviyak47/BookStore)
 
 </div>
 
@@ -70,7 +70,7 @@ Amazon API Gateway
 
 ### 👤 Customer
 - User signup and login with JWT authentication
-- Browse the full book catalog
+- Browse and search the full book catalog
 - Add, update, and remove items from cart
 - Place orders and view order history
 - Manage personal profile
@@ -201,7 +201,6 @@ py -m pytest -v
 
 ## 🔭 Future Enhancements
 
-- [ ] Product search and filtering
 - [ ] Payment gateway integration
 - [ ] Real-time order tracking
 - [ ] Email notifications (SES)
@@ -219,7 +218,9 @@ py -m pytest -v
 
 **Kaviya K**  
 
+## Project Summary
+
+This project demonstrates a scalable serverless e-commerce platform built using AWS cloud services. It implements microservices architecture, JWT authentication, role-based authorization, Infrastructure as Code (Terraform), and cloud-native deployment practices.
 
 ---
-
 
