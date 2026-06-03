@@ -17,9 +17,9 @@
 
 ## 📌 Overview
 
-BookStore is a fully serverless e-commerce application designed and deployed on AWS. Built as part of an internship project, it demonstrates real-world cloud engineering — including microservices architecture, JWT-based authentication, role-based access control, and Infrastructure as Code using Terraform.
+BookStore is a fully serverless e-commerce application designed and deployed on AWS. Built as part of an internship project, it demonstrates real-world cloud engineering including microservices architecture, JWT-based authentication, role-based access control, and Infrastructure as Code using Terraform.
 
-The application allows customers to browse books, manage a cart, and place orders — while admins can manage the product catalog through protected APIs.
+The application allows customers to browse books, manage a cart, and place orders while admins can manage the product catalog through protected APIs.
 
 ---
 
