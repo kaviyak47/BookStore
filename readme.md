@@ -26,27 +26,41 @@ The application allows customers to browse books, manage a cart, and place order
 ## 🏗️ Architecture
 
 ```
-User
- │
- ▼
-Amazon CloudFront (CDN)
- │
- ▼
-Amazon S3 (Static Website Hosting)
- │
- ▼
-Amazon API Gateway
- │
- ├── /auth      → Authentication Service
- ├── /products  → Product Service
- ├── /cart      → Cart Service
- └── /orders    → Order Service
-                      │
-                      ▼
-                 AWS Lambda (Business Logic)
-                      │
-                      ▼
-               Amazon DynamoDB (Data Layer)
+┌─────────────────────────────────────┐
+│           User / Browser            │
+└──────────────────┬──────────────────┘
+                   │ HTTPS
+                   ▼
+┌─────────────────────────────────────┐
+│         Amazon CloudFront           │  ← Global CDN / Edge Caching
+└──────────────────┬──────────────────┘
+                   │
+                   ▼
+┌─────────────────────────────────────┐
+│           Amazon S3                 │  ← Static Website (HTML / CSS / JS)
+└──────────────────┬──────────────────┘
+                   │ API Calls
+                   ▼
+┌─────────────────────────────────────┐
+│        Amazon API Gateway           │  ← REST API + JWT Authorizer
+└────┬──────────┬──────────┬─────┬───┘
+     │          │          │     │
+     ▼          ▼          ▼     ▼
+ /auth      /products   /cart  /orders
+  Auth       Product    Cart   Order
+ Service     Service   Service Service
+     │          │          │     │
+     └──────────┴──────────┴─────┘
+                   │
+                   ▼
+┌─────────────────────────────────────┐
+│            AWS Lambda               │  ← Serverless Business Logic (Python)
+└──────────────────┬──────────────────┘
+                   │
+                   ▼
+┌─────────────────────────────────────┐
+│         Amazon DynamoDB             │  ← Users · Products · Cart · Orders
+└─────────────────────────────────────┘
 ```
 
 ---
