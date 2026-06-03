@@ -1,179 +1,227 @@
-#  📚 Kaviya’s BookStore – Serverless E-Commerce App
+<div align="center">
 
-A fully serverless bookstore web application built using AWS Cloud services.
-This project demonstrates a real-world cloud architecture using API Gateway, Lambda, DynamoDB, S3, and CloudFront with a microservices approach.
+# 📚 BookStore — Serverless E-Commerce Platform
 
----
-## 🚀 Live Demo 
+**A cloud-native, microservices-based bookstore application built on AWS**
 
-🔗 https://d2zskisrlfiy3d.cloudfront.net
+[![AWS](https://img.shields.io/badge/AWS-Cloud-orange?logo=amazon-aws)](https://aws.amazon.com/)
+[![Python](https://img.shields.io/badge/Python-3.x-blue?logo=python)](https://www.python.org/)
+[![Terraform](https://img.shields.io/badge/IaC-Terraform-purple?logo=terraform)](https://www.terraform.io/)
+[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
----
-## 🧩 Features
+[🌐 Live Demo](https://d2zskisrlfiy3d.cloudfront.net) · [📁 Repository](https://github.com/kaviyak47/BookStore)
 
-- 👤 User Signup & Login  
-- 📖 View available books  
-- 🛒 Add items to cart  
-- ➕ Update quantity (+ / -)  
-- ❌ Remove items from cart  
-- ☑️ Select items using checkbox  
-- 📦 Place order  
-- 📜 View order history  
-- 👤 User profile page  
-- ⚡ Fully serverless backend
+</div>
 
 ---
 
-## 🏗️ Architecture Overview
+## 📌 Overview
 
-                User (Browser)
-                        │
-                        ▼
-              CloudFront (CDN)
-                        │
-                        ▼
-            S3 (Static Website)
-                        │
-                        ▼
-                 API Gateway
-          ┌───────────┬───────────┬───────────┐
-          ▼           ▼           ▼
-     Product API   Cart API    Order API
-          │           │           │
-          ▼           ▼           ▼
-        Lambda      Lambda      Lambda
-          │           │           │
-          ▼           ▼           ▼
-     DynamoDB      DynamoDB      DynamoDB
-    (Products)      (Cart)       (Orders)
+BookStore is a fully serverless e-commerce application designed and deployed on AWS. Built as part of an internship project, it demonstrates real-world cloud engineering — including microservices architecture, JWT-based authentication, role-based access control, and Infrastructure as Code using Terraform.
+
+The application allows customers to browse books, manage a cart, and place orders — while admins can manage the product catalog through protected APIs.
+
+---
+
+## 🏗️ Architecture
+
+```
+User
+ │
+ ▼
+Amazon CloudFront (CDN)
+ │
+ ▼
+Amazon S3 (Static Website Hosting)
+ │
+ ▼
+Amazon API Gateway
+ │
+ ├── /auth      → Authentication Service
+ ├── /products  → Product Service
+ ├── /cart      → Cart Service
+ └── /orders    → Order Service
+                      │
+                      ▼
+                 AWS Lambda (Business Logic)
+                      │
+                      ▼
+               Amazon DynamoDB (Data Layer)
+```
+
+---
 
 ## ⚙️ Tech Stack
 
-### Frontend
-- HTML, CSS, JavaScript  
-- Hosted on **Amazon S3**  
-- Delivered via **CloudFront CDN**
-
-### Backend
-- **AWS Lambda (Python)**  
-- **API Gateway (REST API)**  
-- **DynamoDB (NoSQL Database)**  
-
-### Dev Tools
-- AWS CLI (SSO)  
-- VS Code  
-- Pytest (Unit Testing)  
+| Layer | Technology |
+|-------|-----------|
+| **Frontend** | HTML, CSS, JavaScript |
+| **Backend** | Python (AWS Lambda) |
+| **API** | Amazon API Gateway |
+| **Database** | Amazon DynamoDB |
+| **Storage & CDN** | Amazon S3 + CloudFront |
+| **Authentication** | JWT (JSON Web Tokens) |
+| **Infrastructure** | Terraform |
+| **CI / Dev Tools** | AWS CLI, Git, VS Code, Pytest |
 
 ---
 
-## 🔗 API Endpoints
+## ✨ Features
 
-### 🔐 Auth
-- POST https://iyueqkeyjh.execute-api.ap-southeast-1.amazonaws.com/dev/signup  
-- POST https://iyueqkeyjh.execute-api.ap-southeast-1.amazonaws.com/dev/login  
+### 👤 Customer
+- User signup and login with JWT authentication
+- Browse the full book catalog
+- Add, update, and remove items from cart
+- Place orders and view order history
+- Manage personal profile
 
----
-
-### 📚 Products
-- GET https://4vxmem30od.execute-api.ap-southeast-1.amazonaws.com/dev/products  
-
----
-
-### 🛒 Cart
-- GET https://u6t7qrzis6.execute-api.ap-southeast-1.amazonaws.com/dev/cart?user_id=1  
-- POST https://u6t7qrzis6.execute-api.ap-southeast-1.amazonaws.com/dev/cart  
-- PUT https://u6t7qrzis6.execute-api.ap-southeast-1.amazonaws.com/dev/cart  
-- DELETE https://u6t7qrzis6.execute-api.ap-southeast-1.amazonaws.com/dev/cart  
+### 🔐 Admin
+- JWT-based secure login
+- Role-based access control (Admin / Customer)
+- Add and manage products via protected APIs
 
 ---
 
-### 📦 Orders
-- POST https://e4q5pt4mri.execute-api.ap-southeast-1.amazonaws.com/dev/orders  
-- GET https://e4q5pt4mri.execute-api.ap-southeast-1.amazonaws.com/dev/orders  
+## 🗂️ Project Structure
+
+```
+BookStore/
+├── frontend/
+│   ├── index.html
+│   ├── login.html
+│   ├── signup.html
+│   ├── products.html
+│   ├── cart.html
+│   ├── orders.html
+│   ├── profile.html
+│   └── images/
+│
+├── lambda/
+│   ├── auth-service/
+│   ├── product-service/
+│   ├── cart-service/
+│   └── order-service/
+│
+├── tests/
+└── terraform/
+```
 
 ---
 
-## 🗄️ Database Design
-
-### Products Table
-| Attribute | Type |
-|----------|------|
-| id | Number (PK) |
-| title | String |
-| price | Number |
-
-### Cart Table
-| Attribute | Type |
-|----------|------|
-| user_id | Number (PK) |
-| product_id | Number (SK) |
-| title | String |
-| price | Number |
-| qty | Number |
-
-### Orders Table
-| Attribute | Type |
-|----------|------|
-| orderId | String (PK) |
-| user_id | Number |
-| items | List |
-| total | Number |
+## 🗄️ Database Schema
 
 ### Users Table
-| Attribute | Type |
-|----------|------|
-| user_id | String (PK) |
-| username | String |
-| password | String |
+| Attribute | Type | Key |
+|-----------|------|-----|
+| `email` | String | Primary Key |
+| `name` | String | — |
+| `password` | String | — |
+| `role` | String | — |
+
+### Products Table
+| Attribute | Type | Key |
+|-----------|------|-----|
+| `id` | Number | Primary Key |
+| `title` | String | — |
+| `author` | String | — |
+| `price` | Number | — |
+| `image` | String | — |
+
+### Cart Table
+| Attribute | Type | Key |
+|-----------|------|-----|
+| `user_id` | Number | — |
+| `product_id` | Number | — |
+| `title` | String | — |
+| `price` | Number | — |
+| `quantity` | Number | — |
+
+### Orders Table
+| Attribute | Type | Key |
+|-----------|------|-----|
+| `orderId` | String | Primary Key |
+| `user_id` | Number | — |
+| `items` | List | — |
+| `total` | Number | — |
 
 ---
 
-## 🔄 Application Flow
+## 🔄 Application Workflow
 
-1. User accesses the website via CloudFront  
-2. Frontend loads from S3  
-3. User logs in / signs up  
-4. User interacts (view, cart, order)  
-5. API Gateway routes requests to respective Lambda  
-6. Lambda processes logic and interacts with DynamoDB  
-7. Response is returned to frontend  
+1. User visits the app — CloudFront serves assets from **S3**
+2. User signs up or logs in — **Auth Service** validates and returns a **JWT token**
+3. Frontend attaches the JWT to subsequent requests
+4. **API Gateway** routes requests to the correct **Lambda microservice**
+5. Lambda functions execute business logic and read/write from **DynamoDB**
+6. Responses are returned to the frontend
+7. Admin users access protected product management APIs via role-based authorization
 
 ---
 
-## 🧪 Unit Testing
+## 🚀 Deployment
 
-Run tests using:
+### Infrastructure (Terraform)
+```bash
+cd terraform
+terraform init
+terraform plan
+terraform apply
+```
 
+### Backend (AWS Lambda + API Gateway + DynamoDB)
+Deployed automatically via Terraform. Lambda functions are packaged and deployed per microservice.
+
+### Frontend (S3 + CloudFront)
+Static assets are uploaded to S3 and served globally through CloudFront CDN.
+
+---
+
+## 🧪 Testing
+
+Unit tests are written using **Pytest**.
+
+```bash
 py -m pytest -v
+```
 
-## 🔐 Security
-AWS SSO authentication (development access)
-IAM roles for Lambda permissions
-No hardcoded credentials
+---
 
-## 📦 Deployment
-Frontend hosted on S3
-CloudFront used as CDN
-Backend deployed using Lambda + API Gateway
-Cache invalidation handled after updates
+## 🛠️ Key Technical Challenges Solved
 
-## 💡 Challenges Faced
-CORS configuration for PUT & DELETE
-Cart quantity update issues
-API Gateway routing errors
-CloudFront caching old UI
+| Challenge | Solution |
+|-----------|----------|
+| API Gateway Routing | Configured path-based routing to Lambda microservices |
+| DynamoDB Data Modeling | Designed partition keys and attribute structures per table |
+| CORS Configuration | Enabled cross-origin headers on API Gateway and Lambda responses |
+| CloudFront Cache Invalidation | Managed invalidations on frontend deployments |
+| JWT Authentication | Implemented token generation, signing, and validation in auth service |
+| Role-Based Authorization | Decoded JWT claims to enforce admin vs. customer access |
 
-## 📈 Future Enhancements
-JWT Authentication
-Role-based access (Admin/User)
-Payment integration
-Search & filtering
-Order tracking
+---
+
+## 🔭 Future Enhancements
+
+- [ ] Product search and filtering
+- [ ] Payment gateway integration
+- [ ] Real-time order tracking
+- [ ] Email notifications (SES)
+- [ ] Analytics dashboard
+
+---
+
+## ☁️ AWS Services Used
+
+`Amazon S3` · `Amazon CloudFront` · `Amazon API Gateway` · `AWS Lambda` · `Amazon DynamoDB` · `AWS IAM` · `Terraform`
+
+---
 
 ## 👩‍💻 Author
 
-Kaviya K
+**Kaviya K**  
+B.Tech — Computer Science and Business Systems (CSBS)
 
-## 📌 Conclusion
+---
 
-This project demonstrates a scalable serverless e-commerce application using AWS, implementing REST APIs, microservices architecture, and cloud-native design principles.
+<div align="center">
+  <sub>Built with ❤️ on AWS · Deployed serverlessly · Powered by cloud-native architecture</sub>
+</div>
